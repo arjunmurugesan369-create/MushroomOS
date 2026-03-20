@@ -1,0 +1,8 @@
+.env
+*.log
+*.csv
+*.jpg
+images/
+__pycache__/
+*.pyc
+mushroom_data.db
