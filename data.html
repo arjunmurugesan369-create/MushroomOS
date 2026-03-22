@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MushroomOS · Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:      #04080a;
+  --bg1:     #080f12;
+  --bg2:     #0d181d;
+  --green:   #3dff8f;
+  --green2:  #1a9952;
+  --green3:  #0d4a28;
+  --blue:    #3dd9ff;
+  --amber:   #ffb83d;
+  --red:     #ff4d4d;
+  --purple:  #b87dff;
+  --text:    #b8d4c0;
+  --textdim: #3d6650;
+  --border:  #0f2018;
+  --border2: #1a3828;
+  --r:       4px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; min-height: 100vh; }
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.5;
+}
+
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border2);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(4,8,10,0.9);
+  backdrop-filter: blur(12px);
+}
+.logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.logo-mark { width: 32px; height: 32px; border: 1px solid var(--green2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.logo-text { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--green); letter-spacing: -0.5px; }
+.logo-sub { font-size: 10px; color: var(--textdim); letter-spacing: 2px; text-transform: uppercase; display: block; margin-top: 1px; }
+.back-btn { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--textdim); text-decoration: none; border: 1px solid var(--border2); padding: 6px 14px; border-radius: var(--r); transition: all 0.15s; }
+.back-btn:hover { color: var(--text); border-color: var(--border); }
+
+main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+/* Range selector */
+.range-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 14px 18px;
+  background: var(--bg1); border: 1px solid var(--border2); border-radius: var(--r);
+}
+.range-bar label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--textdim); }
+.range-btn {
+  font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px;
+  padding: 5px 14px; border-radius: var(--r);
+  border: 1px solid var(--border2); background: var(--bg2); color: var(--textdim);
+  cursor: pointer; transition: all 0.15s;
+}
+.range-btn:hover { border-color: var(--border); color: var(--text); }
+.range-btn.active { border-color: var(--green2); color: var(--green); background: rgba(61,255,143,0.06); }
+.range-spacer { flex: 1; }
+.record-count { font-size: 10px; color: var(--textdim); }
+
+/* Cards */
+.card {
+  background: var(--bg1); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 20px; position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green3), transparent);
+}
+.card-label {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--textdim); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-label::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+
+/* Charts grid */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.chart-wrap { position: relative; height: 200px; }
+
+/* Device stats */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stat-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r); padding: 16px; text-align: center; }
+.stat-val { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 300; letter-spacing: -1px; }
+.stat-lbl { font-size: 9px; color: var(--textdim); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
+.stat-sub { font-size: 10px; color: var(--textdim); margin-top: 6px; }
+
+.device-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.device-bar-group { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r); padding: 14px; }
+.device-bar-title { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--textdim); margin-bottom: 10px; }
+.device-bar-wrap { height: 8px; background: var(--border2); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.device-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.device-bar-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--textdim); }
+
+/* YOLO timeline */
+.yolo-grid { display: flex; flex-direction: column; gap: 6px; max-height: 400px; overflow-y: auto; }
+.yolo-grid::-webkit-scrollbar { width: 4px; }
+.yolo-grid::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.yolo-row {
+  display: grid;
+  grid-template-columns: 160px 80px 70px 1fr 60px;
+  align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--r);
+  border-left: 3px solid var(--border2);
+}
+.yolo-row.young { border-left-color: var(--green); }
+.yolo-row.ready { border-left-color: var(--amber); }
+.yolo-row.old   { border-left-color: var(--red); }
+.yolo-row.empty { border-left-color: var(--textdim); }
+
+.yr-ts   { font-size: 10px; color: var(--textdim); }
+.yr-cls  { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; text-align: center; }
+.yr-cls.young { color: var(--green); background: rgba(61,255,143,0.1); border: 1px solid var(--green2); }
+.yr-cls.ready { color: var(--amber); background: rgba(255,184,61,0.1); border: 1px solid #664a00; }
+.yr-cls.old   { color: var(--red);   background: rgba(255,77,77,0.1);  border: 1px solid #661a1a; }
+.yr-cls.empty { color: var(--textdim); background: transparent; border: 1px solid var(--border2); }
+.yr-conf { font-size: 11px; color: var(--text); text-align: right; }
+.yr-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.yr-bar { height: 100%; border-radius: 2px; }
+.young .yr-bar { background: var(--green); }
+.ready .yr-bar { background: var(--amber); }
+.old   .yr-bar { background: var(--red); }
+.empty .yr-bar { background: var(--textdim); }
+.yr-temp { font-size: 10px; color: var(--textdim); text-align: right; }
+
+/* Data table */
+.table-wrap { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+.table-wrap::-webkit-scrollbar { width: 4px; height: 4px; }
+.table-wrap::-webkit-scrollbar-thumb { background: var(--border2); }
+
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+thead { position: sticky; top: 0; background: var(--bg1); z-index: 10; }
+th {
+  padding: 8px 12px; text-align: left;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--textdim); border-bottom: 1px solid var(--border2);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+th:hover { color: var(--text); }
+th.sort-asc::after  { content: ' ↑'; color: var(--green); }
+th.sort-desc::after { content: ' ↓'; color: var(--green); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:hover td { background: var(--bg2); }
+.td-on  { color: var(--green); }
+.td-off { color: var(--textdim); }
+.td-yolo { font-size: 9px; padding: 1px 6px; border-radius: 2px; }
+.td-yolo.young { color: var(--green); background: rgba(61,255,143,0.1); }
+.td-yolo.ready { color: var(--amber); background: rgba(255,184,61,0.1); }
+.td-yolo.old   { color: var(--red);   background: rgba(255,77,77,0.1); }
+.td-yolo.empty { color: var(--textdim); }
+
+/* Export */
+.export-btn {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 10px 20px; border-radius: var(--r);
+  border: 1px solid var(--green2); color: var(--green);
+  background: rgba(61,255,143,0.06); cursor: pointer; transition: all 0.15s;
+}
+.export-btn:hover { background: rgba(61,255,143,0.12); }
+
+.empty-state { text-align: center; padding: 40px; color: var(--textdim); font-size: 11px; letter-spacing: 1px; }
+
+@media (max-width: 900px) {
+  .charts-grid { grid-template-columns: 1fr; }
+  .stats-grid  { grid-template-columns: 1fr 1fr; }
+  .device-bars { grid-template-columns: 1fr; }
+  .yolo-row    { grid-template-columns: 1fr 70px 60px; }
+  .yr-bar-wrap, .yr-temp { display: none; }
+}
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  main { padding: 12px 16px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">
+    <div class="logo-mark">🍄</div>
+    <div>
+      <span class="logo-text">MushroomOS</span>
+      <span class="logo-sub">Data Explorer</span>
+    </div>
+  </a>
+  <a class="back-btn" href="index.html">← Dashboard</a>
+</header>
+
+<main>
+
+  <!-- RANGE SELECTOR -->
+  <div class="range-bar">
+    <span class="label">Time range:</span>
+    <button class="range-btn" onclick="setRange(6)">6h</button>
+    <button class="range-btn active" onclick="setRange(24)">24h</button>
+    <button class="range-btn" onclick="setRange(48)">48h</button>
+    <button class="range-btn" onclick="setRange(168)">7d</button>
+    <button class="range-btn" onclick="setRange(720)">30d</button>
+    <button class="range-btn" onclick="setRange(99999)">All time</button>
+    <div class="range-spacer"></div>
+    <span class="record-count" id="record-count">Loading...</span>
+    <button class="export-btn" onclick="exportCSV()">↓ Export CSV</button>
+  </div>
+
+  <!-- DEVICE STATS -->
+  <div class="card">
+    <div class="card-label">Device Statistics</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-val" id="stat-avg-temp" style="color:var(--green)">--</div>
+        <div class="stat-lbl">Avg Temperature</div>
+        <div class="stat-sub" id="stat-temp-range">-- to --°C</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-avg-hum" style="color:var(--blue)">--</div>
+        <div class="stat-lbl">Avg Humidity</div>
+        <div class="stat-sub" id="stat-hum-range">-- to --%</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-heater-pct" style="color:var(--amber)">--</div>
+        <div class="stat-lbl">Heater ON time</div>
+        <div class="stat-sub" id="stat-heater-hrs">-- hours total</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-fogger-pct" style="color:var(--blue)">--</div>
+        <div class="stat-lbl">Fogger ON time</div>
+        <div class="stat-sub" id="stat-fogger-hrs">-- hours total</div>
+      </div>
+    </div>
+    <div class="device-bars">
+      <div class="device-bar-group">
+        <div class="device-bar-title">🔥 Heater usage</div>
+        <div class="device-bar-wrap">
+          <div class="device-bar-fill" id="heater-bar" style="width:0%;background:var(--amber)"></div>
+        </div>
+        <div class="device-bar-meta">
+          <span>OFF</span><span id="heater-bar-pct">--%</span><span>ON</span>
+        </div>
+      </div>
+      <div class="device-bar-group">
+        <div class="device-bar-title">💨 Fogger usage</div>
+        <div class="device-bar-wrap">
+          <div class="device-bar-fill" id="fogger-bar" style="width:0%;background:var(--blue)"></div>
+        </div>
+        <div class="device-bar-meta">
+          <span>OFF</span><span id="fogger-bar-pct">--%</span><span>ON</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="card">
+      <div class="card-label">Temperature · °C</div>
+      <div class="chart-wrap">
+        <canvas id="temp-chart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Humidity · %RH</div>
+      <div class="chart-wrap">
+        <canvas id="hum-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOLO LOG -->
+  <div class="card">
+    <div class="card-label">YOLO Detection Log · Computer Vision</div>
+    <div class="yolo-grid" id="yolo-log">
+      <div class="empty-state">Loading detections...</div>
+    </div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="card">
+    <div class="card-label">Full Snapshot Table</div>
+    <div class="table-wrap">
+      <table id="data-table">
+        <thead>
+          <tr>
+            <th onclick="sortTable('timestamp')">Timestamp</th>
+            <th onclick="sortTable('temperature_c')">Temp °C</th>
+            <th onclick="sortTable('humidity_pct')">Humidity %</th>
+            <th onclick="sortTable('heater_on')">Heater</th>
+            <th onclick="sortTable('fogger_fan_on')">Fogger</th>
+            <th onclick="sortTable('heater_power_w')">Heater W</th>
+            <th onclick="sortTable('fogger_power_w')">Fogger W</th>
+            <th onclick="sortTable('yolo_class')">YOLO</th>
+            <th onclick="sortTable('yolo_confidence')">Conf</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="9" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const API = "https://mushroomos.uk";
+
+let currentHours = 24;
+let allData      = [];
+let sortCol      = 'timestamp';
+let sortDir      = 'desc';
+let tempChart, humChart;
+
+// ── RANGE ────────────────────────────────────────────────────
+function setRange(hours) {
+  currentHours = hours;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadData();
+}
+
+// ── LOAD ─────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await fetch(`${API}/api/history?hours=${currentHours}`);
+    allData = await r.json();
+    document.getElementById('record-count').textContent = `${allData.length} records`;
+    renderAll();
+  } catch(e) {
+    document.getElementById('record-count').textContent = 'Connection error';
+  }
+}
+
+function renderAll() {
+  renderStats();
+  renderCharts();
+  renderYolo();
+  renderTable();
+}
+
+// ── STATS ────────────────────────────────────────────────────
+function renderStats() {
+  if (!allData.length) return;
+
+  const temps  = allData.map(r => r.temperature).filter(Boolean);
+  const hums   = allData.map(r => r.humidity).filter(Boolean);
+  const total  = allData.length;
+  const hOn    = allData.filter(r => r.heater_on).length;
+  const fOn    = allData.filter(r => r.fogger_on).length;
+  const hPct   = total ? Math.round(hOn / total * 100) : 0;
+  const fPct   = total ? Math.round(fOn / total * 100) : 0;
+
+  const avgTemp = temps.length ? (temps.reduce((a,b)=>a+b,0)/temps.length).toFixed(1) : '--';
+  const avgHum  = hums.length  ? (hums.reduce((a,b)=>a+b,0)/hums.length).toFixed(1)  : '--';
+  const minTemp = temps.length ? Math.min(...temps).toFixed(1) : '--';
+  const maxTemp = temps.length ? Math.max(...temps).toFixed(1) : '--';
+  const minHum  = hums.length  ? Math.min(...hums).toFixed(1)  : '--';
+  const maxHum  = hums.length  ? Math.max(...hums).toFixed(1)  : '--';
+
+  document.getElementById('stat-avg-temp').textContent   = avgTemp + '°';
+  document.getElementById('stat-temp-range').textContent = `${minTemp} – ${maxTemp}°C`;
+  document.getElementById('stat-avg-hum').textContent    = avgHum + '%';
+  document.getElementById('stat-hum-range').textContent  = `${minHum} – ${maxHum}%`;
+  document.getElementById('stat-heater-pct').textContent = hPct + '%';
+  document.getElementById('stat-heater-hrs').textContent = `${hOn} of ${total} snapshots`;
+  document.getElementById('stat-fogger-pct').textContent = fPct + '%';
+  document.getElementById('stat-fogger-hrs').textContent = `${fOn} of ${total} snapshots`;
+
+  document.getElementById('heater-bar').style.width     = hPct + '%';
+  document.getElementById('heater-bar-pct').textContent = hPct + '%';
+  document.getElementById('fogger-bar').style.width     = fPct + '%';
+  document.getElementById('fogger-bar-pct').textContent = fPct + '%';
+}
+
+// ── CHARTS ───────────────────────────────────────────────────
+function renderCharts() {
+  const labels = allData.map(r => r.timestamp.slice(5, 16));
+  const temps  = allData.map(r => r.temperature);
+  const hums   = allData.map(r => r.humidity);
+
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 400 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#080f12',
+        borderColor: '#1a3828',
+        borderWidth: 1,
+        titleColor: '#3d6650',
+        bodyColor: '#b8d4c0',
+        titleFont: { family: 'DM Mono', size: 10 },
+        bodyFont:  { family: 'DM Mono', size: 11 },
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: '#3d6650', font: { family: 'DM Mono', size: 9 },
+          maxTicksLimit: 8, maxRotation: 0,
+        },
+        grid: { color: '#0f2018' },
+        border: { color: '#1a3828' }
+      },
+      y: {
+        ticks: { color: '#3d6650', font: { family: 'DM Mono', size: 9 } },
+        grid: { color: '#0f2018' },
+        border: { color: '#1a3828' }
+      }
+    }
+  };
+
+  if (tempChart) tempChart.destroy();
+  if (humChart)  humChart.destroy();
+
+  tempChart = new Chart(document.getElementById('temp-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: temps,
+        borderColor: '#3dff8f',
+        backgroundColor: 'rgba(61,255,143,0.05)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: { ...chartDefaults }
+  });
+
+  humChart = new Chart(document.getElementById('hum-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: hums,
+        borderColor: '#3dd9ff',
+        backgroundColor: 'rgba(61,217,255,0.05)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: { ...chartDefaults }
+  });
+}
+
+// ── YOLO LOG ─────────────────────────────────────────────────
+function renderYolo() {
+  const detections = allData.filter(r => r.yolo_class).reverse();
+  const container  = document.getElementById('yolo-log');
+
+  if (!detections.length) {
+    container.innerHTML = '<div class="empty-state">No YOLO detections in this time range yet.</div>';
+    return;
+  }
+
+  const labels  = { empty:'Empty', young:'Pins', ready:'Ready', old:'Old' };
+  const emojis  = { empty:'○', young:'🌱', ready:'🍄', old:'⚠️' };
+
+  container.innerHTML = detections.map(r => {
+    const cls  = r.yolo_class;
+    const conf = r.yolo_conf ? (r.yolo_conf * 100).toFixed(0) : 0;
+    const barW = r.yolo_conf ? (r.yolo_conf * 100).toFixed(0) : 0;
+    return `
+    <div class="yolo-row ${cls}">
+      <span class="yr-ts">${r.timestamp}</span>
+      <span class="yr-cls ${cls}">${emojis[cls]||''} ${labels[cls]||cls}</span>
+      <span class="yr-conf">${conf}%</span>
+      <div class="yr-bar-wrap"><div class="yr-bar" style="width:${barW}%"></div></div>
+      <span class="yr-temp">${r.temperature ? r.temperature.toFixed(1)+'°C' : '--'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── TABLE ────────────────────────────────────────────────────
+function renderTable() {
+  const sorted = [...allData].sort((a, b) => {
+    const va = a[sortCol] ?? '';
+    const vb = b[sortCol] ?? '';
+    return sortDir === 'asc'
+      ? (va > vb ? 1 : -1)
+      : (va < vb ? 1 : -1);
+  });
+
+  document.getElementById('table-body').innerHTML = sorted.map(r => `
+    <tr>
+      <td>${r.timestamp}</td>
+      <td style="color:var(--green)">${r.temperature?.toFixed(1) ?? '--'}°C</td>
+      <td style="color:var(--blue)">${r.humidity?.toFixed(1) ?? '--'}%</td>
+      <td class="${r.heater_on ? 'td-on' : 'td-off'}">${r.heater_on ? '✅ ON' : '○ OFF'}</td>
+      <td class="${r.fogger_on ? 'td-on' : 'td-off'}">${r.fogger_on ? '✅ ON' : '○ OFF'}</td>
+      <td>${r.heater_power_w?.toFixed(1) ?? '--'}W</td>
+      <td>${r.fogger_power_w?.toFixed(1) ?? '--'}W</td>
+      <td>${r.yolo_class ? `<span class="td-yolo ${r.yolo_class}">${r.yolo_class}</span>` : '—'}</td>
+      <td>${r.yolo_conf ? (r.yolo_conf*100).toFixed(0)+'%' : '—'}</td>
+    </tr>
+  `).join('');
+
+  // Update sort indicators
+  document.querySelectorAll('th').forEach(th => {
+    th.className = '';
+    if (th.getAttribute('onclick')?.includes(sortCol)) {
+      th.className = sortDir === 'asc' ? 'sort-asc' : 'sort-desc';
+    }
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortCol = col;
+    sortDir = 'desc';
+  }
+  renderTable();
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+function exportCSV() {
+  if (!allData.length) return;
+  const headers = ['Timestamp','Temp_C','Humidity_%','Heater_ON','Fogger_ON',
+                   'Heater_W','Fogger_W','YOLO_Class','YOLO_Confidence'];
+  const rows = allData.map(r => [
+    r.timestamp, r.temperature, r.humidity,
+    r.heater_on ? 1 : 0, r.fogger_on ? 1 : 0,
+    r.heater_power_w, r.fogger_power_w,
+    r.yolo_class || '', r.yolo_conf || ''
+  ]);
+  const csv  = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `mushroomos_data_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+loadData();
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>
