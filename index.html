@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MushroomOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #04080a;
+  --bg1:      #080f12;
+  --bg2:      #0d181d;
+  --green:    #3dff8f;
+  --green2:   #1a9952;
+  --green3:   #0d4a28;
+  --blue:     #3dd9ff;
+  --amber:    #ffb83d;
+  --red:      #ff4d4d;
+  --text:     #b8d4c0;
+  --textdim:  #3d6650;
+  --border:   #0f2018;
+  --border2:  #1a3828;
+  --r:        4px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* grain */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.5;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border2);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(4,8,10,0.9);
+  backdrop-filter: blur(12px);
+}
+
+.logo {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.logo-mark {
+  width: 32px; height: 32px;
+  border: 1px solid var(--green2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,100% { box-shadow: 0 0 8px rgba(61,255,143,0.2); }
+  50%      { box-shadow: 0 0 20px rgba(61,255,143,0.5); }
+}
+
+.logo-text {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: -0.5px;
+}
+
+.logo-sub {
+  font-size: 10px;
+  color: var(--textdim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: block;
+  margin-top: 1px;
+}
+
+.header-right {
+  display: flex; align-items: center; gap: 16px;
+}
+
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.api-url {
+  font-size: 10px; color: var(--textdim);
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.api-url:hover { color: var(--text); }
+
+.sys-time { font-size: 11px; color: var(--textdim); letter-spacing: 1px; }
+
+/* ── LAYOUT ── */
+main {
+  padding: 20px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 320px;
+  grid-template-rows: auto auto auto auto;
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── CARD BASE ── */
+.card {
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.5s ease both;
+}
+
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green3), transparent);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-label {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--textdim); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-label::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+
+/* ── SENSOR CARDS ── */
+.sensor-value {
+  font-family: 'Fraunces', serif;
+  font-size: 52px; font-weight: 300;
+  line-height: 1; letter-spacing: -2px;
+  transition: color 0.3s;
+}
+
+.sensor-unit {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px; color: var(--textdim);
+  margin-left: 3px; letter-spacing: 0;
+}
+
+.sensor-target {
+  margin-top: 10px; font-size: 10px; color: var(--textdim);
+  display: flex; justify-content: space-between;
+}
+
+.sensor-bar-wrap {
+  height: 2px; background: var(--border2); margin-top: 10px; border-radius: 1px;
+  overflow: hidden;
+}
+.sensor-bar {
+  height: 100%; border-radius: 1px;
+  transition: width 1s ease;
+}
+
+.status-badge {
+  position: absolute; top: 18px; right: 18px;
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 2px; border: 1px solid;
+}
+.ok   { color: var(--green); border-color: var(--green2); background: rgba(61,255,143,0.05); }
+.warn { color: var(--amber); border-color: #664a00; background: rgba(255,184,61,0.05); }
+.crit { color: var(--red);   border-color: #661a1a; background: rgba(255,77,77,0.05); }
+
+/* ── STAGE CARD ── */
+.stage-card {
+  grid-column: 1 / 3;
+}
+
+.stage-display {
+  display: flex; align-items: center; gap: 20px;
+}
+
+.stage-icon {
+  font-size: 40px;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.stage-name {
+  font-family: 'Fraunces', serif;
+  font-size: 28px; font-weight: 300;
+  color: var(--green); letter-spacing: -0.5px;
+}
+
+.stage-meta { font-size: 10px; color: var(--textdim); margin-top: 4px; }
+
+.stage-steps {
+  display: flex; gap: 0; margin-top: 16px;
+  border: 1px solid var(--border2); border-radius: var(--r); overflow: hidden;
+}
+.stage-step {
+  flex: 1; padding: 8px 6px; text-align: center;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--textdim); border-right: 1px solid var(--border2);
+  transition: all 0.3s;
+}
+.stage-step:last-child { border-right: none; }
+.stage-step.active {
+  background: rgba(61,255,143,0.08);
+  color: var(--green);
+  font-weight: 500;
+}
+.stage-step.done { color: var(--green2); }
+
+/* ── MODE CARD ── */
+.mode-card { grid-column: 3 / 4; }
+
+.mode-display {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.mode-pill {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 20px;
+  border: 1px solid var(--green2); color: var(--green);
+  background: rgba(61,255,143,0.06);
+}
+
+.cycle-display {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;
+}
+.cycle-stat {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 10px;
+  text-align: center;
+}
+.cycle-val {
+  font-family: 'Fraunces', serif;
+  font-size: 24px; font-weight: 300; color: var(--green);
+  letter-spacing: -1px;
+}
+.cycle-lbl { font-size: 9px; color: var(--textdim); letter-spacing: 1px; margin-top: 2px; }
+
+/* ── DEVICES ── */
+.devices-card { grid-column: 1 / 3; }
+
+.devices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.device-btn {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 14px;
+  cursor: pointer; transition: all 0.15s;
+  text-align: left; font-family: 'DM Mono', monospace;
+  position: relative; overflow: hidden;
+}
+.device-btn:hover { border-color: var(--border); background: var(--bg1); }
+.device-btn.on { border-color: var(--green2); background: rgba(61,255,143,0.04); }
+
+.device-name {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--textdim); display: block; margin-bottom: 8px;
+}
+.device-state {
+  font-size: 15px; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.device-btn.on .device-state { color: var(--green); }
+.device-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--textdim); flex-shrink: 0;
+  transition: all 0.3s;
+}
+.device-btn.on .device-dot {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+.device-power {
+  position: absolute; bottom: 10px; right: 12px;
+  font-size: 10px; color: var(--textdim);
+}
+
+/* ── TARGETS ── */
+.targets-card { grid-column: 3 / 4; }
+
+.target-row {
+  display: grid; grid-template-columns: 1fr auto auto;
+  align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.target-row:last-of-type { border-bottom: none; }
+.target-name { font-size: 11px; color: var(--text); }
+.target-input {
+  width: 64px; background: var(--bg2); border: 1px solid var(--border2);
+  color: var(--green); font-family: 'DM Mono', monospace; font-size: 12px;
+  padding: 4px 8px; border-radius: var(--r); text-align: right; outline: none;
+  transition: border-color 0.15s;
+}
+.target-input:focus { border-color: var(--green2); }
+.target-unit { font-size: 10px; color: var(--textdim); width: 20px; }
+
+.save-btn {
+  width: 100%; margin-top: 12px;
+  background: rgba(61,255,143,0.06); border: 1px solid var(--green2);
+  color: var(--green); font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  padding: 10px; border-radius: var(--r); cursor: pointer;
+  transition: all 0.15s;
+}
+.save-btn:hover { background: rgba(61,255,143,0.12); }
+
+/* ── SNAPSHOT ── */
+.snapshot-card { grid-column: 4 / 5; grid-row: 1 / 5; }
+
+.snapshot-wrap {
+  background: #020608; border: 1px solid var(--border2);
+  border-radius: var(--r); overflow: hidden; aspect-ratio: 4/3;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px; position: relative;
+}
+
+.snapshot-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: opacity 0.3s;
+}
+
+.snapshot-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(4,8,10,0.85));
+  padding: 12px 10px 8px;
+  font-size: 9px; letter-spacing: 1px; color: var(--text);
+}
+
+.yolo-badge {
+  display: inline-block; padding: 2px 8px;
+  background: rgba(61,255,143,0.1); border: 1px solid var(--green2);
+  border-radius: 2px; color: var(--green);
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.refresh-btn {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2);
+  color: var(--textdim); font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 9px; border-radius: var(--r); cursor: pointer;
+  transition: all 0.15s; margin-bottom: 10px;
+}
+.refresh-btn:hover { border-color: var(--border); color: var(--text); }
+
+.stage-info {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r); padding: 12px; margin-top: 10px;
+}
+.stage-info-row {
+  display: flex; justify-content: space-between;
+  padding: 5px 0; border-bottom: 1px solid var(--border);
+  font-size: 10px;
+}
+.stage-info-row:last-child { border-bottom: none; }
+.si-key { color: var(--textdim); }
+.si-val { color: var(--text); }
+
+/* ── CHART ── */
+.chart-card { grid-column: 1 / 4; }
+
+.chart-wrap { position: relative; height: 140px; margin-top: 4px; }
+svg.sparkline { width: 100%; height: 100%; overflow: visible; }
+
+.chart-legend {
+  display: flex; gap: 20px; margin-bottom: 10px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--textdim); cursor: pointer;
+}
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--bg1); border: 1px solid var(--green2);
+  color: var(--green); font-size: 11px; letter-spacing: 1px;
+  padding: 10px 18px; border-radius: var(--r); z-index: 1000;
+  transform: translateY(50px); opacity: 0;
+  transition: all 0.2s ease;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  main { grid-template-columns: 1fr 1fr 1fr; }
+  .snapshot-card { grid-column: 1 / 4; grid-row: auto; }
+  .stage-card, .devices-card, .chart-card { grid-column: 1 / 3; }
+}
+@media (max-width: 680px) {
+  main { grid-template-columns: 1fr 1fr; padding: 12px 16px; }
+  .stage-card, .devices-card, .chart-card, .snapshot-card { grid-column: 1 / 3; }
+  .sensor-value { font-size: 42px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🍄</div>
+    <div>
+      <span class="logo-text">MushroomOS</span>
+      <span class="logo-sub">Autonomous Grow Chamber · RPi Zero 2W</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-dot" id="live-dot"></div>
+    <span class="api-url" id="api-url-display" title="Click to change API URL">API connected</span>
+    <span class="sys-time" id="sys-time">--:--:--</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- TEMPERATURE -->
+  <div class="card" style="animation-delay:0.05s">
+    <div class="card-label">Temperature · SHT31</div>
+    <span class="status-badge ok" id="temp-badge">NOMINAL</span>
+    <div class="sensor-value" id="temp-val" style="color:var(--green)">
+      --<span class="sensor-unit">°C</span>
+    </div>
+    <div class="sensor-bar-wrap">
+      <div class="sensor-bar" id="temp-bar" style="width:50%;background:var(--green)"></div>
+    </div>
+    <div class="sensor-target">
+      <span>Target: <span id="temp-target-display">--°C</span></span>
+      <span id="temp-trend">--</span>
+    </div>
+  </div>
+
+  <!-- HUMIDITY -->
+  <div class="card" style="animation-delay:0.1s">
+    <div class="card-label">Humidity · SHT31</div>
+    <span class="status-badge ok" id="hum-badge">NOMINAL</span>
+    <div class="sensor-value" id="hum-val" style="color:var(--blue)">
+      --<span class="sensor-unit">%</span>
+    </div>
+    <div class="sensor-bar-wrap">
+      <div class="sensor-bar" id="hum-bar" style="width:50%;background:var(--blue)"></div>
+    </div>
+    <div class="sensor-target">
+      <span>Target: <span id="hum-target-display">--%</span></span>
+      <span id="hum-trend">--</span>
+    </div>
+  </div>
+
+  <!-- MODE -->
+  <div class="card mode-card" style="animation-delay:0.15s">
+    <div class="card-label">Control Mode</div>
+    <div class="mode-display">
+      <div class="mode-pill" id="mode-pill">AUTO</div>
+    </div>
+    <div class="cycle-display" id="cycle-display" style="display:none">
+      <div class="cycle-stat">
+        <div class="cycle-val" id="cycle-on">--</div>
+        <div class="cycle-lbl">MIN ON</div>
+      </div>
+      <div class="cycle-stat">
+        <div class="cycle-val" id="cycle-off">--</div>
+        <div class="cycle-lbl">MIN OFF</div>
+      </div>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:8px;">
+      <button class="refresh-btn" style="margin:0;flex:1" onclick="setMode('auto')">Auto</button>
+      <button class="refresh-btn" style="margin:0;flex:1" onclick="setMode('cycle')">Cycle</button>
+    </div>
+  </div>
+
+  <!-- SNAPSHOT -->
+  <div class="card snapshot-card" style="animation-delay:0.2s">
+    <div class="card-label">Chamber View · Latest</div>
+    <div class="snapshot-wrap">
+      <img id="snapshot-img" src="" alt="No image" onerror="this.style.display='none'">
+      <div class="snapshot-overlay" id="snapshot-overlay" style="display:none">
+        <div class="yolo-badge" id="yolo-badge"></div>
+        <div id="yolo-ts" style="color:var(--textdim);font-size:9px;margin-top:2px"></div>
+      </div>
+    </div>
+    <button class="refresh-btn" onclick="refreshSnapshot()">↻ Refresh snapshot</button>
+
+    <div class="stage-info">
+      <div class="stage-info-row">
+        <span class="si-key">Growth stage</span>
+        <span class="si-val" id="si-stage">--</span>
+      </div>
+      <div class="stage-info-row">
+        <span class="si-key">Last detection</span>
+        <span class="si-val" id="si-yolo">--</span>
+      </div>
+      <div class="stage-info-row">
+        <span class="si-key">Confidence</span>
+        <span class="si-val" id="si-conf">--</span>
+      </div>
+      <div class="stage-info-row">
+        <span class="si-key">Snapshots</span>
+        <span class="si-val" id="si-snaps">--</span>
+      </div>
+      <div class="stage-info-row">
+        <span class="si-key">Uptime</span>
+        <span class="si-val" id="si-uptime">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAGE -->
+  <div class="card stage-card" style="animation-delay:0.25s">
+    <div class="card-label">Growth Stage · YOLO Detection</div>
+    <div class="stage-display">
+      <div class="stage-icon" id="stage-icon">🌱</div>
+      <div>
+        <div class="stage-name" id="stage-name">--</div>
+        <div class="stage-meta" id="stage-meta">Waiting for data...</div>
+      </div>
+    </div>
+    <div class="stage-steps">
+      <div class="stage-step" id="step-colonisation">Colonisation</div>
+      <div class="stage-step" id="step-pinning">Pinning</div>
+      <div class="stage-step" id="step-fruiting">Fruiting</div>
+      <div class="stage-step" id="step-post-harvest">Post-harvest</div>
+    </div>
+  </div>
+
+  <!-- DEVICES -->
+  <div class="card devices-card" style="animation-delay:0.3s">
+    <div class="card-label">Device Control · Tuya</div>
+    <div class="devices-grid">
+      <button class="device-btn" id="btn-heater" onclick="toggleDevice('heater')">
+        <span class="device-name">Heater</span>
+        <div class="device-state">
+          <div class="device-dot"></div>
+          <span class="device-state-txt">--</span>
+        </div>
+        <span class="device-power" id="heater-power">--W</span>
+      </button>
+      <button class="device-btn" id="btn-fogger" onclick="toggleDevice('fogger')">
+        <span class="device-name">Fogger / Fan</span>
+        <div class="device-state">
+          <div class="device-dot"></div>
+          <span class="device-state-txt">--</span>
+        </div>
+        <span class="device-power" id="fogger-power">--W</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TARGETS -->
+  <div class="card targets-card" style="animation-delay:0.35s">
+    <div class="card-label">Targets · Persistent</div>
+    <div class="target-row">
+      <span class="target-name">Temperature</span>
+      <input class="target-input" type="number" id="inp-temp" step="0.5" value="23">
+      <span class="target-unit">°C</span>
+    </div>
+    <div class="target-row">
+      <span class="target-name">Humidity</span>
+      <input class="target-input" type="number" id="inp-hum" value="90">
+      <span class="target-unit">%</span>
+    </div>
+    <div class="target-row">
+      <span class="target-name">Cycle ON</span>
+      <input class="target-input" type="number" id="inp-cycle-on" value="15">
+      <span class="target-unit">min</span>
+    </div>
+    <div class="target-row">
+      <span class="target-name">Cycle OFF</span>
+      <input class="target-input" type="number" id="inp-cycle-off" value="15">
+      <span class="target-unit">min</span>
+    </div>
+    <button class="save-btn" onclick="saveTargets()">⟳ Push to device</button>
+  </div>
+
+  <!-- CHART -->
+  <div class="card chart-card" style="animation-delay:0.4s">
+    <div class="card-label">History · Last 24h</div>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Temperature (°C)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Humidity (%)</div>
+    </div>
+    <div class="chart-wrap">
+      <svg class="sparkline" id="sparkline" viewBox="0 0 800 140" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────
+// Change this to your Cloudflare tunnel URL
+const API = "https://mushroomos.uk";
+
+document.getElementById('api-url-display').textContent = new URL(API).hostname.split('.')[0] + '...';
+document.getElementById('api-url-display').onclick = () => {
+  const url = prompt('Enter API URL:', API);
+  if (url) { localStorage.setItem('mushroom_api', url); location.reload(); }
+};
+
+// Check for saved API URL
+const savedAPI = localStorage.getItem('mushroom_api');
+const BASE     = savedAPI || API;
+
+// ── STATE ───────────────────────────────────────────────────────
+let prevTemp = null, prevHum = null;
+let histT = [], histH = [];
+let relayStates = { heater: false, fogger: false };
+
+// ── CLOCK ───────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('sys-time').textContent =
+    new Date().toLocaleTimeString('en-GB');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── TOAST ───────────────────────────────────────────────────────
+function showToast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.textContent = (ok ? '✓ ' : '✗ ') + msg;
+  t.style.borderColor = ok ? 'var(--green2)' : '#661a1a';
+  t.style.color       = ok ? 'var(--green)'  : 'var(--red)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── FETCH STATUS ────────────────────────────────────────────────
+async function fetchStatus() {
+  try {
+    const r = await fetch(`${BASE}/api/status`);
+    const d = await r.json();
+
+    document.getElementById('live-dot').style.background = 'var(--green)';
+
+    // Temperature
+    const temp = d.temperature;
+    const tEl  = document.getElementById('temp-val');
+    tEl.innerHTML = `${temp}<span class="sensor-unit">°C</span>`;
+    const tPct = Math.min(100, Math.max(0, ((temp - 10) / 25) * 100));
+    document.getElementById('temp-bar').style.width = tPct + '%';
+    document.getElementById('temp-target-display').textContent = d.target_temp + '°C';
+    document.getElementById('inp-temp').value = d.target_temp;
+
+    if (prevTemp !== null) {
+      const diff = (temp - prevTemp).toFixed(1);
+      document.getElementById('temp-trend').textContent =
+        diff > 0 ? `↑ +${diff}°C` : diff < 0 ? `↓ ${diff}°C` : '→ stable';
+    }
+    prevTemp = temp;
+
+    const tempOk = temp >= d.target_temp - 2 && temp <= d.target_temp + 2;
+    tEl.style.color = tempOk ? 'var(--green)' : temp > d.target_temp + 3 ? 'var(--red)' : 'var(--amber)';
+    const tBadge = document.getElementById('temp-badge');
+    tBadge.textContent = tempOk ? 'NOMINAL' : 'WARNING';
+    tBadge.className   = 'status-badge ' + (tempOk ? 'ok' : 'warn');
+
+    // Humidity
+    const hum  = d.humidity;
+    const hEl  = document.getElementById('hum-val');
+    hEl.innerHTML = `${hum}<span class="sensor-unit">%</span>`;
+    document.getElementById('hum-bar').style.width = hum + '%';
+    document.getElementById('hum-target-display').textContent = d.target_humidity + '%';
+    document.getElementById('inp-hum').value = d.target_humidity;
+
+    if (prevHum !== null) {
+      const diff = (hum - prevHum).toFixed(1);
+      document.getElementById('hum-trend').textContent =
+        diff > 0 ? `↑ +${diff}%` : diff < 0 ? `↓ ${diff}%` : '→ stable';
+    }
+    prevHum = hum;
+
+    const humOk = hum >= d.target_humidity - 5 && hum <= d.target_humidity + 5;
+    hEl.style.color = humOk ? 'var(--blue)' : 'var(--amber)';
+    const hBadge = document.getElementById('hum-badge');
+    hBadge.textContent = humOk ? 'NOMINAL' : 'WARNING';
+    hBadge.className   = 'status-badge ' + (humOk ? 'ok' : 'warn');
+
+    // Mode
+    const mode = d.control_mode;
+    document.getElementById('mode-pill').textContent = mode.toUpperCase();
+    const cycleDiv = document.getElementById('cycle-display');
+    if (mode === 'cycle') {
+      cycleDiv.style.display = 'grid';
+      document.getElementById('cycle-on').textContent  = d.cycle_on_min;
+      document.getElementById('cycle-off').textContent = d.cycle_off_min;
+    } else {
+      cycleDiv.style.display = 'none';
+    }
+    document.getElementById('inp-cycle-on').value  = d.cycle_on_min;
+    document.getElementById('inp-cycle-off').value = d.cycle_off_min;
+
+    // Stage
+    updateStage(d.growth_stage);
+
+    // Sidebar info
+    document.getElementById('si-stage').textContent   = d.growth_stage;
+    document.getElementById('si-yolo').textContent    = d.last_yolo_class  || '—';
+    document.getElementById('si-conf').textContent    = d.last_yolo_conf ? (d.last_yolo_conf * 100).toFixed(0) + '%' : '—';
+    document.getElementById('si-snaps').textContent   = d.snapshots;
+    document.getElementById('si-uptime').textContent  = d.hours_running + 'h';
+
+    // YOLO badge on snapshot
+    if (d.last_yolo_class) {
+      document.getElementById('snapshot-overlay').style.display = 'block';
+      document.getElementById('yolo-badge').textContent = d.last_yolo_class.toUpperCase();
+      document.getElementById('yolo-ts').textContent    = d.last_yolo_time || '';
+    }
+
+    // History for chart
+    histT.push(temp);
+    histH.push(hum);
+    if (histT.length > 48) { histT.shift(); histH.shift(); }
+    drawChart();
+
+  } catch(e) {
+    document.getElementById('live-dot').style.background = 'var(--red)';
+  }
+}
+
+// ── STAGE ───────────────────────────────────────────────────────
+const stageIcons = {
+  'colonisation': '🌿', 'pinning': '🌱', 'fruiting': '🍄', 'post-harvest': '✂️'
+};
+const stageMeta = {
+  'colonisation': 'Mycelium spreading through substrate',
+  'pinning':      'Pins forming — increase FAE and humidity',
+  'fruiting':     'Fruiting bodies developing — harvest window approaching',
+  'post-harvest': 'Post-harvest — clean block for next flush'
+};
+const stages = ['colonisation', 'pinning', 'fruiting', 'post-harvest'];
+
+function updateStage(stage) {
+  document.getElementById('stage-icon').textContent = stageIcons[stage] || '🌿';
+  document.getElementById('stage-name').textContent = stage.charAt(0).toUpperCase() + stage.slice(1);
+  document.getElementById('stage-meta').textContent = stageMeta[stage] || '';
+
+  const idx = stages.indexOf(stage);
+  stages.forEach((s, i) => {
+    const el = document.getElementById('step-' + s);
+    if (el) {
+      el.className = 'stage-step' + (i === idx ? ' active' : i < idx ? ' done' : '');
+    }
+  });
+}
+
+// ── RELAYS ──────────────────────────────────────────────────────
+async function fetchRelays() {
+  try {
+    const r = await fetch(`${BASE}/api/relays`);
+    const d = await r.json();
+
+    updateDeviceBtn('heater', d.heater.on, d.heater.power);
+    updateDeviceBtn('fogger', d.fogger.on, d.fogger.power);
+    relayStates = { heater: d.heater.on, fogger: d.fogger.on };
+  } catch(e) {}
+}
+
+function updateDeviceBtn(device, on, power) {
+  const btn = document.getElementById('btn-' + device);
+  const txt = btn.querySelector('.device-state-txt');
+  if (on) { btn.classList.add('on'); txt.textContent = 'ON'; }
+  else     { btn.classList.remove('on'); txt.textContent = 'OFF'; }
+  const pwEl = document.getElementById(device + '-power');
+  if (pwEl && power !== null) pwEl.textContent = power + 'W';
+}
+
+async function toggleDevice(device) {
+  const newState = !relayStates[device];
+  try {
+    await fetch(`${BASE}/api/relay/${device}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({state: newState})
+    });
+    relayStates[device] = newState;
+    updateDeviceBtn(device, newState, null);
+    showToast(`${device} ${newState ? 'ON' : 'OFF'}`);
+  } catch(e) {
+    showToast('Command failed', false);
+  }
+}
+
+// ── TARGETS ─────────────────────────────────────────────────────
+async function saveTargets() {
+  const temp     = parseFloat(document.getElementById('inp-temp').value);
+  const hum      = parseFloat(document.getElementById('inp-hum').value);
+  const cycleOn  = parseFloat(document.getElementById('inp-cycle-on').value);
+  const cycleOff = parseFloat(document.getElementById('inp-cycle-off').value);
+
+  try {
+    await fetch(`${BASE}/api/targets`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({temp, humidity: hum})
+    });
+    await fetch(`${BASE}/api/mode`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({on_min: cycleOn, off_min: cycleOff})
+    });
+    showToast('Targets saved and pushed to device');
+    fetchStatus();
+  } catch(e) {
+    showToast('Save failed', false);
+  }
+}
+
+// ── MODE ────────────────────────────────────────────────────────
+async function setMode(mode) {
+  try {
+    await fetch(`${BASE}/api/mode`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({mode})
+    });
+    showToast(`Switched to ${mode} mode`);
+    fetchStatus();
+  } catch(e) {
+    showToast('Mode switch failed', false);
+  }
+}
+
+// ── SNAPSHOT ────────────────────────────────────────────────────
+function refreshSnapshot() {
+  const img = document.getElementById('snapshot-img');
+  img.style.display = 'block';
+  img.src = `${BASE}/api/snapshot?t=${Date.now()}`;
+}
+refreshSnapshot();
+
+// ── CHART ───────────────────────────────────────────────────────
+async function fetchHistory() {
+  try {
+    const r = await fetch(`${BASE}/api/history?hours=24`);
+    const d = await r.json();
+    histT = d.map(x => x.temperature).filter(Boolean);
+    histH = d.map(x => x.humidity).filter(Boolean);
+    drawChart();
+  } catch(e) {}
+}
+
+function drawChart() {
+  const svg = document.getElementById('sparkline');
+  svg.innerHTML = '';
+  const W = 800, H = 140;
+
+  // Grid lines
+  [30, 70, 110].forEach(y => {
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1','0'); line.setAttribute('y1',y);
+    line.setAttribute('x2',W); line.setAttribute('y2',y);
+    line.setAttribute('stroke','#0f2018'); line.setAttribute('stroke-width','0.5');
+    svg.appendChild(line);
+  });
+
+  function plotLine(data, min, max, color) {
+    if (data.length < 2) return;
+    const pts = data.map((v,i) => {
+      const x = (i / (data.length-1)) * W;
+      const y = H - 10 - ((v-min)/(max-min)) * (H-20);
+      return `${x},${y}`;
+    });
+    const path = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    path.setAttribute('points', pts.join(' '));
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width','1.5');
+    path.setAttribute('stroke-linejoin','round');
+    path.setAttribute('opacity','0.85');
+    svg.appendChild(path);
+
+    // Last point dot
+    const last = pts[pts.length-1].split(',');
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx', last[0]); dot.setAttribute('cy', last[1]);
+    dot.setAttribute('r','3'); dot.setAttribute('fill', color);
+    svg.appendChild(dot);
+  }
+
+  plotLine(histT, 10, 35, '#3dff8f');
+  plotLine(histH.map(v=>v*0.3), 10, 35, '#3dd9ff');
+}
+
+// ── INIT ────────────────────────────────────────────────────────
+fetchStatus();
+fetchRelays();
+fetchHistory();
+
+setInterval(fetchStatus,  5000);
+setInterval(fetchRelays,  8000);
+setInterval(fetchHistory, 60000);
+</script>
+</body>
+</html>
